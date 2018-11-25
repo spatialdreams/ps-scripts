@@ -1,49 +1,25 @@
+#not really imports, but they are imports
 $PSVersionTable.PSVersion
+$mb = gwmi win32_baseboard
+$vc = wmic path win32_videocontroller get name 
+$cpu = Get-Ciminstance -ClassName win32_processor 
+$ram = gwmi win32_physicalmemory
 
 #
 #parse command line arguments
 #
 
 param (
-[string]$desiredRuntime = "default"
-  [Parameter(Mandatory=$true)][string]$delay,
-  [string]$display = $("true")
+  [string]$runtime = "default",
+  [Parameter(Mandatory=$true)][Int32]$delay,
+  [string]$display
 )
 
-#
-#data snapshot
-#
-
-function snapshot() {
-  $os = Get-Ciminstance Win32_OperatingSystem 
-  $key += Get-Date -Uformat %T  
-  $vramUsage += 
-  $memUsage += [math]::Round(($os.FreePhysicalMemory/$os.TotalVisibleMemorySize)*100,2)
-  $cpuLoad +=
-}
-
-
-#program specific
-$day = Get-Date -Uformat %D 
-$startTime = Get-Date -Uformat %T
-$endTime = Get-Date -Uformat %T
-$elapsedTime = NEW-TIMESPAN -Start $startTime -End $endTime
-
-#user specific
-$motherboard = gwmi win32_baseboard
-$videoController = wmic path win32_videocontroller get name 
-$processor = Get-Ciminstance -ClassName win32_processor | format-list
-$ram = gwmi win32_physicalmemory
-
-
-#ram info to gather from RAM
-#"BankLabel":
-
-if ($desiredRunTime.Contains("H" -or "M" -or "S")) {
-  for { 
-	  
+if ($runtime.Contains("H" -or "M" -or "S")) {
+  for (i in len($runtime)){ 
+    
   }
-} elseif ($desiredRunTime.Contains("always") {
+} elseif ($runtime.Contains("program") {
 
 }
 
@@ -52,60 +28,65 @@ if ($desiredRunTime.Contains("H" -or "M" -or "S")) {
 # Object Structure
 #
 
+$startTime = Get-Date -Uformat %T
+
+Payload @{	 
+  [scan$i]@{
+  
+    ramUsage = [math]::Round(($os.FreePhysicalMemory/$os.TotalVisibleMemorySize)*100,2),
+	vramUsage = $,
+    cpuUsage = $,
+    cpuTemp = $,
+    gpuUsage = $,
+    gpuTemp = $
+  }
+}
+
+$endTime = Get-Date -Uformat %T
+$elapsedTime = NEW-TIMESPAN -Start $startTime -End $endTime
+
 $header = @{
   ProgramInfo = @{
     date = $day,
     endTime = $endTime
     startTime = $startTime
-    elapsed = $elapsedTime
+    elapsedTime = $elapsedTime
     }
   cpu: @{
-    Name = $,
-    Manufacturer = $,
-    SocketDesignation = $,
-    CurrentClockSpeed = $,
-    MaxClockSpeed = $,
-    NumberOfCores = $, 
-    NumberOfEnabledCore = $, 
-    NumberOfLogicalProcessors = $,
-    L2CacheSize = $, 
-    L2CacheSpeed = $, 
-    L3CacheSize = $, 
-    L3CacheSpeed = $, 
-    Architecture = $,
-    Family = $,
-    ExtClock = $,  
-    DeviceID = $,
-    UniqueId = $
+    Name = $cpu.name,
+    Manufacturer = $cpu.manufacturer,
+    SocketDesignation = $cpu.socketdesignation,
+    CurrentClockSpeed = $cpu.currentclockspeed,
+    MaxClockSpeed = $cpu.maxclockspeed,
+    NumberOfCores = $cpu.numberofcores, 
+    NumberOfEnabledCore = $cpu.numberofenabledcore, 
+    NumberOfLogicalProcessors = $cpu.numberoflogicalprocessors,
+    L2CacheSize = $cpu.l2cachesize, 
+    L2CacheSpeed = $cpu.L2CacheSpeed, 
+    L3CacheSize = $cpu.L3CacheSize, 
+    L3CacheSpeed = $cpu.L3CacheSpeed, 
+    Architecture = $cpu.Architecture,
+    Family = $cpu.Family,
+    ExtClock = $cpu.extfamily,  
+    DeviceID = $cpu.deviceid,
+    UniqueId = $cpu.uniqueid
     }
   memory: @{
-    Brand = $,
+    Manufacturer = $,
     modules = $,
-    totalMemory = $,
+    TotalMemory = $,
      = $,
      = $
     }
   motherboard: @{
-    Brand = $,
-     = $,
-     = $,
-     = $
+    Manufacturer = $mb.manufacturer,
+    SerialNumber = $mb.serialnumber,
+    ProductCode = $mb.prodcut
     }
   videocontroller: @{
-     = $,
+     Manufacturer= $,
      = $,
      = $,
      = $
     }
-}
-	
-Payload @{	 
-  [scan$i]@{
-    ramUsage = $,
-	cpuUsage = $,
-	cpuTemp = $,
-	gpuUsage = $,
-	gpuTemp = $,
-	 = $
-  }
 }
