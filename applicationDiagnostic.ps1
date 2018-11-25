@@ -1,5 +1,5 @@
 #
-#command line arguments and parameter passing
+#parse command line arguments
 #
 param (
 [string]$desiredRuntime = "2m"
@@ -20,18 +20,17 @@ switch ($desiredRunTime) {
 }
 
 $startTime = Get-Date -Uformat %T
-#info to aggregate
-#info: avialble ram, available VRAM, cpu usage, cpu temp, gpu usage, gpu temp 
+
+#info to aggregate:
+#ram usage, VRAM usage, cpu usage, cpu temp, gpu usage, gpu temp 
 #
 
 while 
 }
 $key = Get-Date -Uformat %T
 $os = Get-Ciminstance Win32_OperatingSystem
-$memoryUsage += $os.FreePhysicalMemory
-$vram += 
-$delay = 1
-$sysinfo = $os.
+$vramUsage += 
+$memUsage = [math]::Round(($os.FreePhysicalMemory/$os.TotalVisibleMemorySize)*100,2)
 sleep($delay)
 }
 
@@ -41,3 +40,6 @@ $day = Get-Date -Uformat %D
 $endTime = Get-Date -Uformat %T
 $elapsedTime = NEW-TIMESPAN -Start $startTime -End $endTime
 $videoController = wmic path win32_VideoController get name 
+$motherboard = gwmi Win32_BaseBoard
+$processor = Get-Ciminstance -ClassName Win32_Processor
+$ram = gwmi win32_physicalmemory
