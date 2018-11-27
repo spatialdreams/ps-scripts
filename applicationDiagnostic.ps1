@@ -1,9 +1,11 @@
 #get system info
-$PSVersionTable.PSVersiong
+$psv = $PSVersionTable.PSVersion
+$bios = gwmi win32_bios
 $mb = gwmi win32_baseboard
 $vc = gwmi win32_videocontroller 
 $ram = gwmi win32_physicalmemory
 $cpu = gwmi win32_processor 
+$os = gwmi win32_operatingsystem
 
 #
 #parse command line arguments
@@ -21,29 +23,16 @@ if ($runtime.Contains("H" -or "M" -or "S")) {
 	}
     if ($i = M) {
       $hours = $i.split({"M"})
-
+    }
 	if ($i = S) {
-	}
       $seconds = $i.split({"S"})
 	}
   }
 } elseif ($runtime.Contains("program") {
 
 } else {
-   
+   throw "the -runtime switch format is ..." #add the format
 }
-
-#
-# program outline
-#
-
-$Payload = @()
-$startTime = Get-Date -Uformat %T 
-for loop {
-$Payload.append(snapshot())
-}
-$endTime = Get-Date -Uformat %T
-$elapsedTime = NEW-TIMESPAN -Start $startTime -End $endTime
 
 #
 # Object Structure
@@ -53,13 +42,13 @@ function snapshot {
   $livecpu = Get-Counter '\Memory\Available MBytes'
   $liveram = Get-Counter '\Processor(_Total)\% Processor Time'
   scan = @(
-    ramUsage = [math]::Round(( / )*100,2),
-    vramUsage = $,
+    ramUsage = [math] = =Round(( / )*100,2),
+    vramUsage = [math] = =Round(( / )*100,2),
     cpuUsage = $,
     cpuTemp = $,
     gpuUsage = $,
     gpuTemp = $,
-    procList = 
+    procList = get-process
   )
 }
 $header = @{
@@ -68,13 +57,14 @@ $header = @{
     endTime = $endTime
     startTime = $startTime
     elapsedTime = $elapsedTime
+	psversion = $psv
   }
   motherboard = @{
     Manufacturer = $mb.manufacturer,
     SerialNumber = $mb.serialnumber,
     ProductCode = $mb.product
   }
-  cpu= @{
+  cpu = @{
     Name = $cpu.name,
     Manufacturer = $cpu.manufacturer,
     SocketDesignation = $cpu.SocketDesignation,
@@ -95,14 +85,14 @@ $header = @{
   }
   memory = @{
     TotalMemory = $ram.,
-    Modules = @(
-      module = @{
-        
-        Manufacturer = $,
-         = $,
-         = $
-      }
-    )
+	Modules = @()
+	for (module in bank){
+        module.append(
+          Manufacturer = $,
+           = $,
+           = $
+       )
+	}
   }
 
   videocontroller = @{
@@ -112,6 +102,34 @@ $header = @{
      MemoryType = $vc.videomemorytype
   }
   operatingSystem = @{
-  
+    SystemDirectory  = $os.SystemDirectory
+    Organization = $os.Organization
+    BuildNumber = $os.BuildNumber
+    RegisteredUser = $os.RegisteredUser
+    SerialNumber = $os.SerialNumber
+    Version = $os.Version
   }
+  bios = @{
+    SMBIOSBIOSVersion = $bios.SMBIOSBIOSVersion
+    Manufacturer = $bios.Manufacturer
+    Name = $bios.Name
+    SerialNumber = $bios.SerialNumber
+    Version = $bios.Version
+  }
+}
+
+
+#
+# program outline
+#
+function Main(){
+  $Payload = @()
+  $startTime = Get-Date -Uformat %T 
+  while (True){
+    $Payload.append(snapshot())
+    sleep($delay-$payload.header.)
+  }
+  $endTime = Get-Date -Uformat %T
+  $elapsedTime = NEW-TIMESPAN -Start $startTime -End $endTime
+  return header + payload 
 }
