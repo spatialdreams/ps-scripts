@@ -1,5 +1,4 @@
 #get system info
-$psv = $PSVersionTable.PSVersion
 $bios = gwmi win32_bios
 $mb = gwmi win32_baseboard
 $vc = gwmi win32_videocontroller 
@@ -11,24 +10,13 @@ $os = gwmi win32_operatingsystem
 #parse command line arguments
 #
 param (
-  [string]$runtime = "default",
+  [string[]]$runtime = [H="",M="4",S=""]
   [Parameter(Mandatory=$true)][Int32]$delay,
-  [string]$display
+  [string]$program,
+  [string]$cvs = "false"
 )
 
-if ($runtime.Contains("H" -or "M" -or "S")) {
-  for (i$ in len($runtime)){ 
-    if ($i = H) {
-      $hours = $i.split({"H"})	  
-	}
-    if ($i = M) {
-      $hours = $i.split({"M"})
-    }
-	if ($i = S) {
-      $seconds = $i.split({"S"})
-	}
-  }
-} elseif ($runtime.Contains("program") {
+
 
 } else {
    throw "the -runtime switch format is ..." #add the format
@@ -42,8 +30,8 @@ function snapshot {
   $livecpu = Get-Counter '\Memory\Available MBytes'
   $liveram = Get-Counter '\Processor(_Total)\% Processor Time'
   scan = @(
-    ramUsage = [math] = =Round(( / )*100,2),
-    vramUsage = [math] = =Round(( / )*100,2),
+    ramUsage = [math]::Round(( / )*100,2),
+    vramUsage = [math]::Round(( / )*100,2),
     cpuUsage = $,
     cpuTemp = $,
     gpuUsage = $,
@@ -57,7 +45,7 @@ $header = @{
     endTime = $endTime
     startTime = $startTime
     elapsedTime = $elapsedTime
-	psversion = $psv
+	psversion = $PSVersionTable.PSVersion
   }
   motherboard = @{
     Manufacturer = $mb.manufacturer,
@@ -84,13 +72,16 @@ $header = @{
     UniqueId = $cpu.uniqueid
   }
   memory = @{
-    TotalMemory = $ram.,
-	Modules = @()
-	for (module in bank){
-        module.append(
-          Manufacturer = $,
-           = $,
-           = $
+    TotalMemory = $ram.totalphyiscalmemory
+	bank = @()
+	foreach ($module in $ram){
+        bank.append(
+          Manufacturer = $module.manufacturer,
+          Speed = $module.speed,
+          Capacity = $module.Capacity,
+		  PartNumber = $module.PartNumber,
+		  SerialNumber = $module.SerialNumber 
+		  tag = $module.tag
        )
 	}
   }
@@ -100,6 +91,7 @@ $header = @{
      Manufacturer = $vc.manufacturer,
      VideoMemory = $vc.adapterram,
      MemoryType = $vc.videomemorytype
+	 InstalledDisplayDrivers = $InstalledDisplayDrivers
   }
   operatingSystem = @{
     SystemDirectory  = $os.SystemDirectory
@@ -110,11 +102,11 @@ $header = @{
     Version = $os.Version
   }
   bios = @{
+    Name = $bios.Name
+    Version = $bios.Version
     SMBIOSBIOSVersion = $bios.SMBIOSBIOSVersion
     Manufacturer = $bios.Manufacturer
-    Name = $bios.Name
     SerialNumber = $bios.SerialNumber
-    Version = $bios.Version
   }
 }
 
@@ -126,10 +118,11 @@ function Main(){
   $Payload = @()
   $startTime = Get-Date -Uformat %T 
   while (True){
-    $Payload.append(snapshot())
-    sleep($delay-$payload.header.)
+    $scantime = Measure-Command { $Payload.append(snapshot()) } | Select-Object TotalSeconds  
+    sleep($delay-$scantime)
   }
   $endTime = Get-Date -Uformat %T
   $elapsedTime = NEW-TIMESPAN -Start $startTime -End $endTime
-  return header + payload 
+  times = ($startTime, $endTime, $elapsedTime)
+  return $header + $payload + $times
 }
