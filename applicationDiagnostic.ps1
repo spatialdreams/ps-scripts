@@ -25,20 +25,6 @@ param (
 #
 # Object Structure
 #
-
-function snapshot {
-  $livecpu = Get-Counter '\Memory\Available MBytes'
-  $liveram = Get-Counter '\Processor(_Total)\% Processor Time'
-  scan = @(
-    ramUsage = [math]::Round(( / )*100,2),
-    vramUsage = [math]::Round(( / )*100,2),
-    cpuUsage = $,
-    cpuTemp = $,
-    gpuUsage = $,
-    gpuTemp = $,
-    procList = get-process
-  )
-}
 $header = @{
   ProgramInfo = @{
     date = $day,
@@ -72,7 +58,7 @@ $header = @{
     UniqueId = $cpu.uniqueid
   }
   memory = @{
-    TotalMemory = $ram.totalphyiscalmemory
+    TotalMemory = $ram | Measure-Object -Property capacity -Sum | select sum
 	bank = @()
 	foreach ($module in $ram){
         bank.append(
@@ -110,6 +96,19 @@ $header = @{
   }
 }
 
+function snapshot() {
+  $liveram = Get-Counter '\Memory\Available Bytes'
+  $livecpu = Get-Counter '\Processor(_Total)\% Processor Time'
+  scan = @(
+    ramUsage = [math]::Round(100-($liveram.countersamples.cookedvalue/$header.totalmemory.sum)*100,2),
+    vramUsage = [math]::Round(( / )*100,2),
+    cpuUsage = $,
+    cpuTemp = $,
+    gpuUsage = $,
+    gpuTemp = $,
+    procList = get-process
+  )
+}
 
 #
 # program outline
