@@ -10,24 +10,24 @@ $os = gwmi win32_operatingsystem
 #parse command line arguments
 #
 param (
-  [string[]]$runtime = [H="",M="4",S=""]
+  [string[]]$runtime = (0,4,0),
   [Parameter(Mandatory=$true)][Int32]$delay,
   [string]$program,
-  [string]$cvs = "false"
+  [string]$csv = "false"
 )
 
 
 
-} else {
-   throw "the -runtime switch format is ..." #add the format
-}
+#} else {
+#   throw "the -runtime switch format is ..." #add the format
+#}
 
 #
 # Object Structure
 #
 $header = @{
   ProgramInfo = @{
-    date = $day,
+    date = Get-Date -Uformat %D,
     endTime = $endTime
     startTime = $startTime
     elapsedTime = $elapsedTime
@@ -66,32 +66,32 @@ $header = @{
           Speed = $module.speed,
           Capacity = $module.Capacity,
 		  PartNumber = $module.PartNumber,
-		  SerialNumber = $module.SerialNumber 
+		  SerialNumber = $module.SerialNumber,
 		  tag = $module.tag
        )
 	}
   }
 
-  videocontroller = @{
+  $videocontroller = @{
      Name = $vc.name,
      Manufacturer = $vc.manufacturer,
      VideoMemory = $vc.adapterram,
-     MemoryType = $vc.videomemorytype
+     MemoryType = $vc.videomemorytype,
 	 InstalledDisplayDrivers = $InstalledDisplayDrivers
   }
-  operatingSystem = @{
-    SystemDirectory  = $os.SystemDirectory
-    Organization = $os.Organization
-    BuildNumber = $os.BuildNumber
-    RegisteredUser = $os.RegisteredUser
-    SerialNumber = $os.SerialNumber
+  $operatingSystem = @{
+    SystemDirectory  = $os.SystemDirectory,
+    Organization = $os.Organization,
+    BuildNumber = $os.BuildNumber,
+    RegisteredUser = $os.RegisteredUser,
+    SerialNumber = $os.SerialNumber,
     Version = $os.Version
   }
-  bios = @{
-    Name = $bios.Name
-    Version = $bios.Version
-    SMBIOSBIOSVersion = $bios.SMBIOSBIOSVersion
-    Manufacturer = $bios.Manufacturer
+  $bios = @{
+    Name = $bios.Name,
+    Version = $bios.Version,
+    SMBIOSBIOSVersion = $bios.SMBIOSBIOSVersion,
+    Manufacturer = $bios.Manufacturer,
     SerialNumber = $bios.SerialNumber
   }
 }
@@ -99,28 +99,30 @@ $header = @{
 function snapshot() {
   $liveram = Get-Counter '\Memory\Available Bytes'
   $livecpu = Get-Counter '\Processor(_Total)\% Processor Time'
-  scan = @(
-    ramUsage = [math]::Round(100-($liveram.countersamples.cookedvalue/$header.totalmemory.sum)*100,2),
-    vramUsage = [math]::Round(( / )*100,2),
-    cpuUsage = $,
-    cpuTemp = $,
-    gpuUsage = $,
-    gpuTemp = $,
+  $scan = @(
+    ramUsage = [math]::Round( 100 - ( $liveram.countersamples.cookedvalue / $header.totalmemory.sum) * 100,2 ),
+    cpuUsage = [math]::Round( $livecpu.countersamples.cookedvalue ),
+	#vramUsage = $,
+    #cpuTemp = $,
+    #gpuUsage = $,
+    #gpuTemp = $,
     procList = get-process
   )
+  return scan
 }
 
 #
 # program outline
 #
 function Main(){
-  $Payload = @()
-  $startTime = Get-Date -Uformat %T 
-  while (True){
+  $payload = @()
+  $startTime = [DateTime]::Now
+  $endTime = $startTime.Add(1).AddHours($runtime[0]).AddMinutes($runtime[1]).AddSeconds($runtime[2])
+  while ([DateTime]::Now -lt $endTime) {
     $scantime = Measure-Command { $Payload.append(snapshot()) } | Select-Object TotalSeconds  
     sleep($delay-$scantime)
   }
-  $endTime = Get-Date -Uformat %T
+  $runTime = Get-Date -Uformat %T
   $elapsedTime = NEW-TIMESPAN -Start $startTime -End $endTime
   times = ($startTime, $endTime, $elapsedTime)
   return $header + $payload + $times
