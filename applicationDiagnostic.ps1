@@ -1,6 +1,8 @@
 #
-#parse command line arguments
+# A powershell attempt at gathering Windows system and program information.
 #
+
+#parse command line arguments
 Param (
   [string]$runtime,
   [Parameter(Mandatory=$true)][Int32]$delay,
@@ -11,16 +13,23 @@ Param (
 if( $runtime = '') {
 	$runtime = @(0,4,0)
 }
-
+#if ($runtime -contains $letters){
+#	#end snapshot process after another program exits.
+#}
+#} else {
+#   throw "the -runtime switch format is ..." #add the format
+#}
 
 #get system info
 $bios = gwmi win32_bios
 $mb = gwmi win32_baseboard
 $vc = gwmi win32_videocontroller 
-$ram = gwmi win32_physicalmemory
-$cpu = gwmi win32_processor 
 $os = gwmi win32_operatingsystem
+$cpu = gwmi win32_processor 
+$ram = gwmi win32_physicalmemory
 $banks = @()
+
+# Object Structure
 foreach ( $module in $ram ) {
   $bank = @{
     Manufacturer = $module.manufacturer;
@@ -32,18 +41,6 @@ foreach ( $module in $ram ) {
   $banks += $bank
 }
 
-
-
-
-
-
-#} else {
-#   throw "the -runtime switch format is ..." #add the format
-#}
-
-#
-# Object Structure
-#
 $header = @{
   ProgramInfo = @{
     date = Get-Date -Uformat %D;
@@ -80,13 +77,12 @@ $header = @{
     TotalMemory = $ram | Measure-Object -Property capacity -Sum | select sum
 	Banks = $banks
   }
-
   videocontroller = @{
-     Name = $vc.name;
-     Manufacturer = $vc.manufacturer;
-     VideoMemory = $vc.adapterram;
-     MemoryType = $vc.videomemorytype;
-	 InstalledDisplayDrivers = $InstalledDisplayDrivers;
+    Name = $vc.name;
+    Manufacturer = $vc.manufacturer;
+    VideoMemory = $vc.adapterram;
+    MemoryType = $vc.videomemorytype;
+    intalledDisplayDrivers = $InstalledDisplayDrivers;
   }
   operatingSystem = @{
     SystemDirectory  = $os.SystemDirectory;
@@ -106,14 +102,12 @@ $header = @{
 }
 
 
-#
-# program outline
-#
+# program structure
 function snapshot() {
   $liveram = Get-Counter '\Memory\Available Bytes'
   $livecpu = Get-Counter '\Processor(_Total)\% Processor Time'
   $scan = @{
-    cpuUsage =  $livecpu.countersamples.cookedvalue;
+    cpuUsage = $livecpu.countersamples.cookedvalue;
     ramUsage = 100 - ( $liveram.countersamples.cookedvalue / $header.totalmemory.sum ) * 100 / 2;
     #vramUsage = $;
     #cpuTemp = $;
@@ -128,17 +122,24 @@ function Main() {
   $payload = @()
   $startTime = [DateTime]::Now
   $endTime = $startTime.Add(1).AddHours($runtime[0]).AddMinutes($runtime[1]).AddSeconds($runtime[2])
+  #if runtime = program {
+  #  loop snapshot until program is not in proclist
+  #}
   while ([DateTime]::Now -lt $endTime) {
     $scantime = Measure-Command { $payload += snapshot } | Select-Object TotalSeconds
     sleep($delay-$scantime)
   }
   $runTime = Get-Date -Uformat %T
-  $elapsedTime = NEW-TIMESPAN -Start $startTime -End $endTime
-  $times = @($startTime, $endTime, $elapsedTime)
+  $elapsedTime = NEW-TIMESPAN -Start $startTime -End elapsedTime
+  $times = @{
+    startTime = $startTime;
+    endTime = $endTime;
+    elapsedTime = $elapsedTime;
+  }
   $output = @{
-  	  header = $header
-	  payload = $payload
-	  times = $times
+    header = $header
+    payload = $payload
+    times = $times
   }
   return $output
 }
