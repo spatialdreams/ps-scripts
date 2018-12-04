@@ -2,4 +2,4 @@
 A directory for windows powershell scripts
 
 # Application diagnostic
-Work in progress in non-functioning state.
+system info with powershell. [Unstable]
