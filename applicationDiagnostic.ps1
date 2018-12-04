@@ -1,3 +1,18 @@
+#
+#parse command line arguments
+#
+Param (
+  [string]$runtime,
+  [Parameter(Mandatory=$true)][Int32]$delay,
+  [string]$program,
+  [string]$csv = "false"
+)
+
+if( $runtime = '') {
+	$runtime = @(0,4,0)
+}
+
+
 #get system info
 $bios = gwmi win32_bios
 $mb = gwmi win32_baseboard
@@ -5,16 +20,20 @@ $vc = gwmi win32_videocontroller
 $ram = gwmi win32_physicalmemory
 $cpu = gwmi win32_processor 
 $os = gwmi win32_operatingsystem
+$banks = @()
+foreach ( $module in $ram ) {
+  $bank = @{
+    Manufacturer = $module.manufacturer;
+    Speed = $module.speed;
+    Capacity = $module.Capacity;
+    PartNumber = $module.PartNumber;
+    SerialNumber = $module.SerialNumber;  
+  }
+  $banks += $bank
+}
 
-#
-#parse command line arguments
-#
-param (
-  [string[]]$runtime = (0,4,0),
-  [Parameter(Mandatory=$true)][Int32]$delay,
-  [string]$program,
-  [string]$csv = "false"
-)
+
+
 
 
 
@@ -33,7 +52,7 @@ $header = @{
     elapsedTime = $elapsedTime;
 	psversion = $PSVersionTable.PSVersion;
   }
-  motherboard = @{
+  baseboard = @{
     Manufacturer = $mb.manufacturer;
     SerialNumber = $mb.serialnumber;
     ProductCode = $mb.product;
@@ -59,16 +78,7 @@ $header = @{
   }
   memory = @{
     TotalMemory = $ram | Measure-Object -Property capacity -Sum | select sum
-	bank = @( 
-      foreach ($module in $ram){
-      $ = @{
-        Manufacturer = $module.manufacturer;
-        Speed = $module.speed;
-        Capacity = $module.Capacity;
-        PartNumber = $module.PartNumber;
-        SerialNumber = $module.SerialNumber;  
-      }
-    )
+	Banks = $banks
   }
 
   videocontroller = @{
@@ -95,34 +105,42 @@ $header = @{
   }
 }
 
+
+#
+# program outline
+#
 function snapshot() {
   $liveram = Get-Counter '\Memory\Available Bytes'
   $livecpu = Get-Counter '\Processor(_Total)\% Processor Time'
-  $scan = @(
-    ramUsage = [math]::Round( 100 - ( $liveram.countersamples.cookedvalue / $header.totalmemory.sum) * 100;2 );
-    cpuUsage = [math]::Round( $livecpu.countersamples.cookedvalue );
+  $scan = @{
+    cpuUsage =  $livecpu.countersamples.cookedvalue;
+    ramUsage = 100 - ( $liveram.countersamples.cookedvalue / $header.totalmemory.sum ) * 100 / 2;
     #vramUsage = $;
     #cpuTemp = $;
     #gpuUsage = $;
     #gpuTemp = $;
     procList = get-process;
-  )
-  return scan
+  }
+  return $scan
 }
 
-#
-# program outline
-#
-function Main(){
+function Main() {
   $payload = @()
   $startTime = [DateTime]::Now
   $endTime = $startTime.Add(1).AddHours($runtime[0]).AddMinutes($runtime[1]).AddSeconds($runtime[2])
   while ([DateTime]::Now -lt $endTime) {
-    $scantime = Measure-Command { $Payload.append(snapshot()) } | Select-Object TotalSeconds  
+    $scantime = Measure-Command { $payload += snapshot } | Select-Object TotalSeconds
     sleep($delay-$scantime)
   }
   $runTime = Get-Date -Uformat %T
   $elapsedTime = NEW-TIMESPAN -Start $startTime -End $endTime
-  times = ($startTime, $endTime, $elapsedTime)
-  return $header + $payload + $times
+  $times = @($startTime, $endTime, $elapsedTime)
+  $output = @{
+  	  header = $header
+	  payload = $payload
+	  times = $times
+  }
+  return $output
 }
+
+Main
