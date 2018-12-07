@@ -2,7 +2,8 @@
 A directory for windows powershell scripts
 
 ## Application diagnostic
-system info with powershell. [Unstable]
+> system info with powershell. [Unstable]
+
 ###TODO:
   add live vram, gpu, and temp info to snapshots,
   change the get-process command so it returns program level hardware usage information,
