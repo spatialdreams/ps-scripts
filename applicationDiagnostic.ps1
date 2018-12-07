@@ -13,8 +13,10 @@ Param (
 if( $runtime = '') {
 	$runtime = @(0,4,0)
 }
-#if ($runtime -contains $letters){
-#	#end snapshot process after another program exits.
+#if ($runtime -contains $programName){
+#  #check the first 5 proclist results for program name
+#  #if not exit
+#  #if it does, call the snapshot function until program name 
 #}
 #} else {
 #   throw "the -runtime switch format is ..." #add the format
@@ -130,7 +132,7 @@ function Main() {
     sleep($delay-$scantime)
   }
   $runTime = Get-Date -Uformat %T
-  $elapsedTime = NEW-TIMESPAN -Start $startTime -End elapsedTime
+  $elapsedTime = NEW-TIMESPAN -Start $startTime -End $runtime
   $times = @{
     startTime = $startTime;
     endTime = $endTime;
