@@ -10,4 +10,4 @@ system info with powershell. [Unstable]
   - add conditional to end snapshot loop after the program name provided by the -program argument is missing from the proclist,
   - add an excel friendly csv output with graphs and shyt because Windows.
 ##### BUG:
-  - ram usage is returning negative infinity.
+  - ram usage is returning negative infinity. (AKA this is a Windoze project and my interest in this is near nonexistant)
